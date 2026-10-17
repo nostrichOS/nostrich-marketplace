@@ -1,6 +1,6 @@
 {
   "name": "nostrich-marketplace",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "How Nostrich reads and writes the Nostr marketplace: NIP-99 listings and the Open Markets order flow.",
   "license": "MIT",
   "type": "module",

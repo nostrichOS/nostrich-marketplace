@@ -7,7 +7,7 @@ Orders follow the Open Markets order flow. Every message is a rumor (an unsigned
 | Kind | `type` | From | Tags we write | Content |
 |---|---|---|---|---|
 | 16 | `1` order | buyer | `p` seller, `subject`, `order`, `amount` (sats, delivery included), `["item", "30402:…", quantity]` per item, `shipping` (`30406:…`) when one is picked, `address`, `email`, `phone` when given | The buyer's note, plain text |
-| 16 | `2` payment request | seller | `p` buyer, `subject`, `order`, `amount`, `["payment", medium, reference]` per way to pay, `expiration` | Payment instructions |
+| 16 | `2` payment request | seller | `p` buyer, `subject`, `order`, `amount`, `["payment", medium, reference]` per way to pay, `expiration` (the invoice's own expiry) | Payment instructions |
 | 16 | `3` status | either | `p`, `subject`, `order`, `status`: `pending`, `confirmed`, `processing`, `completed` or `cancelled` | A short update |
 | 16 | `4` shipping | seller | `p` buyer, `subject`, `order`, `status`: `processing`, `shipped`, `delivered` or `exception`, `tracking`, `carrier`, `eta` | A short update |
 | 17 | receipt | buyer | `p` seller, `subject`, `order`, `["payment", medium, reference, proof]`, `amount` | A note |
@@ -36,6 +36,14 @@ kind 17
 ```
 
 The receipt's `amount` is the invoice's own amount. A receipt for an on-chain payment is `["payment", "bitcoin", "<address>", "<txid>"]`.
+
+A payment request's `expiration` is the invoice's own expiry, its creation time plus its expiry field, so the two always agree. We make a seller's invoice last 24 hours. A request that is only a Bitcoin address carries no `expiration`.
+
+## Where messages go
+
+Every message is sent to the relays in the recipient's kind 10050, as NIP-17 says. When a recipient has none, we also send to their NIP-65 read relays and a few marketplace relays.
+
+Anybody who sends an order message, publishes a listing or opens their orders on Nostrich gets a kind 10050 if they have none, so other apps always have a declared inbox to reach them.
 
 ## Who may say what
 

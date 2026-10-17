@@ -3,12 +3,15 @@
 import type { Signer } from '../src/core/types'
 import { wrapRumor } from '../src/orders/gift-wrap'
 import { buildPaymentRequest, buildShippingUpdate, buildStatusUpdate, type OrderView } from '../src/orders/orders'
+import { decodeBolt11 } from '../src/payments/lnurl'
 
-/** Asks the buyer to pay this invoice within a day. */
+/** Asks the buyer to pay this invoice; `expiration` is the invoice's own expiry, read from the invoice. */
 export async function requestPayment(seller: Signer, view: OrderView, bolt11: string) {
   if (view.buyer === undefined || view.order === undefined) throw new Error('the order message has not been read yet')
-  const expiration = Math.floor(Date.now() / 1000) + 24 * 60 * 60
-  return wrapRumor(seller, buildPaymentRequest({ buyer: view.buyer, orderId: view.orderId, amount: view.order.amount, payments: [{ medium: 'lightning', reference: bolt11 }], expiration }), [view.buyer])
+  const invoice = decodeBolt11(bolt11)
+  const expiration = invoice === null ? undefined : invoice.timestamp + invoice.expirySeconds
+  const payments = [{ medium: 'lightning', reference: bolt11 }]
+  return wrapRumor(seller, buildPaymentRequest({ buyer: view.buyer, orderId: view.orderId, amount: view.order.amount, payments, ...(expiration === undefined ? {} : { expiration }) }), [view.buyer])
 }
 
 /** Says the payment arrived, then that the order is on its way. */
